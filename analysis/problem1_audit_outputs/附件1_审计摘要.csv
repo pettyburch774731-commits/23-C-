@@ -1,0 +1,3 @@
+rows,distinct_product_codes,duplicate_full_rows,missing_by_column,product_codes_with_multiple_names,product_codes_with_multiple_category_codes,product_codes_with_multiple_category_names,category_codes_with_multiple_names,product_names_with_multiple_codes,non_15_digit_product_code_rows,transaction_distinct_product_codes,transaction_codes_missing_from_attachment1,attachment1_codes_absent_from_attachment2
+251,251,0,"{""单品编码"": 0, ""单品名称"": 0, ""分类编码"": 0, ""分类名称"": 0}",0,0,0,0,0,0,246,,102900005116042;102900005116776;102900011011782;102900011023648;102900011032145
+
