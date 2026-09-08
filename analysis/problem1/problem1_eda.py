@@ -139,6 +139,26 @@ def category_analysis(category_daily: pd.DataFrame, outputs: Path, figures: Path
     ym["月份"] = ym.index.month
     year_month_avg = ym.groupby(["年份", "月份"])[names].mean().reset_index()
     write_csv(year_month_avg, outputs / "category" / "品类_跨年度_月度日均销量.csv")
+    # Only 2021 and 2022 contain all twelve months. Compare their curves
+    # directly; the half-years 2020/2023 remain visual context, not replicates.
+    full_2021 = year_month_avg[year_month_avg["年份"] == 2021].sort_values("月份").reset_index(drop=True)
+    full_2022 = year_month_avg[year_month_avg["年份"] == 2022].sort_values("月份").reset_index(drop=True)
+    stability_rows = []
+    for name in names:
+        peak_21, peak_22 = int(full_2021.loc[full_2021[name].idxmax(), "月份"]), int(full_2022.loc[full_2022[name].idxmax(), "月份"])
+        trough_21, trough_22 = int(full_2021.loc[full_2021[name].idxmin(), "月份"]), int(full_2022.loc[full_2022[name].idxmin(), "月份"])
+        pearson = full_2021[name].corr(full_2022[name], method="pearson")
+        spearman = full_2021[name].corr(full_2022[name], method="spearman")
+        peak_close = abs(peak_21 - peak_22) <= 1
+        trough_close = abs(trough_21 - trough_22) <= 1
+        # This conservative label is an evidence summary, not a claim that
+        # seasonality has been proved from only two complete years.
+        label = "完整年度间有一定重复线索" if pearson >= .5 and spearman >= .5 and peak_close and trough_close else "跨完整年度不稳定，仅作描述"
+        stability_rows.append({"分类名称": name, "2021_峰值月份": peak_21, "2022_峰值月份": peak_22, "峰值月份相近_≤1月": peak_close,
+                               "2021_低谷月份": trough_21, "2022_低谷月份": trough_22, "低谷月份相近_≤1月": trough_close,
+                               "2021_2022月均曲线Pearson": pearson, "2021_2022月均曲线Spearman": spearman, "判定": label})
+    seasonal_stability = pd.DataFrame(stability_rows)
+    write_csv(seasonal_stability, outputs / "category" / "品类_2021_2022月份规律一致性.csv")
 
     weekdays = panel.copy()
     weekdays["星期"] = weekdays.index.dayofweek
@@ -146,9 +166,10 @@ def category_analysis(category_daily: pd.DataFrame, outputs: Path, figures: Path
     weekday_avg["星期名称"] = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
     write_csv(weekday_avg, outputs / "category" / "品类_星期日均销量.csv")
 
+    calendar_days = pd.Series((panel.index - panel.index.min()).days.astype(float), index=panel.index)
     trend = pd.DataFrame({
         "分类名称": names,
-        "Spearman_日期趋势": [panel[name].corr(pd.Series(np.arange(len(panel)), index=panel.index), method="spearman") for name in names],
+        "Spearman_距起始日期日历天数": [panel[name].corr(calendar_days, method="spearman") for name in names],
     })
     write_csv(trend, outputs / "category" / "品类_长期趋势统计.csv")
 
@@ -167,11 +188,14 @@ def category_analysis(category_daily: pd.DataFrame, outputs: Path, figures: Path
     fig.savefig(figures / "品类_日销量箱线图.png")
     plt.close(fig)
 
-    rolling = panel.rolling(28, min_periods=14).mean()
+    # A time offset makes this a true calendar window. Missing store-record days
+    # are absent rather than zero-filled, so each mean uses only valid dates in
+    # the preceding 28 calendar days.
+    rolling = panel.rolling("28D", min_periods=1).mean()
     fig, ax = plt.subplots(figsize=(11, 5.2))
     for name in names:
         ax.plot(rolling.index, rolling[name], linewidth=1.2, label=name)
-    ax.set(title="品类日销量的 28 日移动平均", xlabel="日期", ylabel="日销量（kg）")
+    ax.set(title="品类日销量：28 日历日窗口内有效观测日平均", xlabel="日期", ylabel="日销量（kg）")
     ax.legend(ncol=3, fontsize=8)
     fig.savefig(figures / "品类_时间规律_28日移动平均.png")
     plt.close(fig)
@@ -205,7 +229,7 @@ def category_analysis(category_daily: pd.DataFrame, outputs: Path, figures: Path
     fig.savefig(figures / "品类_星期日均销量.png")
     plt.close(fig)
 
-    return {"panel": panel, "stats": stats, "monthly": month_avg, "year_month": year_month_avg, "weekday": weekday_avg, "trend": trend, "observed_days": len(observed_dates)}
+    return {"panel": panel, "stats": stats, "monthly": month_avg, "year_month": year_month_avg, "seasonal_stability": seasonal_stability, "weekday": weekday_avg, "trend": trend, "observed_days": len(observed_dates)}
 
 
 def item_analysis(item_daily: pd.DataFrame, active: pd.DataFrame | None, outputs: Path, figures: Path) -> dict:
@@ -296,7 +320,7 @@ def heatmap(matrix: pd.DataFrame, title: str, path: Path) -> None:
     plt.close(fig)
 
 
-def residualize_time_effects(panel: pd.DataFrame) -> pd.DataFrame:
+def residualize_time_effects(panel: pd.DataFrame, include_year: bool = False) -> pd.DataFrame:
     """Remove additive weekday, calendar-month and linear-time effects by OLS.
 
     This is a transparent descriptive adjustment, not a causal model.  The time
@@ -309,7 +333,12 @@ def residualize_time_effects(panel: pd.DataFrame) -> pd.DataFrame:
     month = pd.get_dummies(dates.month, prefix="month", drop_first=True, dtype=float)
     weekday.index = dates
     month.index = dates
-    x = pd.concat([design, weekday, month], axis=1).to_numpy(dtype=float)
+    parts = [design, weekday, month]
+    if include_year:
+        year = pd.get_dummies(dates.year, prefix="year", drop_first=True, dtype=float)
+        year.index = dates
+        parts.append(year)
+    x = pd.concat(parts, axis=1).to_numpy(dtype=float)
     residuals = pd.DataFrame(index=dates, columns=panel.columns, dtype=float)
     for name in panel.columns:
         y = panel[name].to_numpy(dtype=float)
@@ -338,10 +367,14 @@ def category_correlations(panel: pd.DataFrame, outputs: Path, figures: Path) -> 
     residuals = residualize_time_effects(panel)
     residual_p = residuals.corr(method="pearson")
     residual_s = residuals.corr(method="spearman")
+    residuals_year = residualize_time_effects(panel, include_year=True)
+    residual_year_p = residuals_year.corr(method="pearson")
+    residual_year_s = residuals_year.corr(method="spearman")
     for name, table in [("品类_日尺度_Pearson相关矩阵.csv", daily_p), ("品类_日尺度_Spearman相关矩阵.csv", daily_s),
                         ("品类_周尺度_旧含不完整周_Pearson相关矩阵.csv", weekly_all_p), ("品类_周尺度_旧含不完整周_Spearman相关矩阵.csv", weekly_all_s),
                         ("品类_周尺度_完整自然周_Pearson相关矩阵.csv", weekly_p), ("品类_周尺度_完整自然周_Spearman相关矩阵.csv", weekly_s),
-                        ("品类_残差_Pearson相关矩阵.csv", residual_p), ("品类_残差_Spearman相关矩阵.csv", residual_s)]:
+                        ("品类_残差_Pearson相关矩阵.csv", residual_p), ("品类_残差_Spearman相关矩阵.csv", residual_s),
+                        ("品类_残差_含年份效应_Pearson相关矩阵.csv", residual_year_p), ("品类_残差_含年份效应_Spearman相关矩阵.csv", residual_year_s)]:
         write_csv(table.reset_index().rename(columns={"category_name": "分类名称"}), outputs / "correlation" / name)
     heatmap(daily_p, "品类日销量 Pearson 相关", figures / "品类_日尺度Pearson热力图.png")
     heatmap(daily_s, "品类日销量 Spearman 相关", figures / "品类_日尺度Spearman热力图.png")
@@ -355,11 +388,14 @@ def category_correlations(panel: pd.DataFrame, outputs: Path, figures: Path) -> 
         pairs.append({"品类A": a, "品类B": b, "日Pearson": daily_p.loc[a, b], "日Spearman": daily_s.loc[a, b],
                       "旧周Pearson": weekly_all_p.loc[a, b], "旧周Spearman": weekly_all_s.loc[a, b],
                       "完整周Pearson": weekly_p.loc[a, b], "完整周Spearman": weekly_s.loc[a, b],
-                      "残差Pearson": residual_p.loc[a, b], "残差Spearman": residual_s.loc[a, b]})
+                      "残差Pearson": residual_p.loc[a, b], "残差Spearman": residual_s.loc[a, b],
+                      "残差含年份Pearson": residual_year_p.loc[a, b], "残差含年份Spearman": residual_year_s.loc[a, b]})
     pair_table = pd.DataFrame(pairs)
     pair_table["周Pearson修正差异"] = pair_table["完整周Pearson"] - pair_table["旧周Pearson"]
     pair_table["周Spearman修正差异"] = pair_table["完整周Spearman"] - pair_table["旧周Spearman"]
-    pair_table["最大绝对相关"] = pair_table[["日Pearson", "日Spearman", "完整周Pearson", "完整周Spearman", "残差Pearson", "残差Spearman"]].abs().max(axis=1)
+    pair_table["残差Pearson_年份效应差异"] = pair_table["残差含年份Pearson"] - pair_table["残差Pearson"]
+    pair_table["残差Spearman_年份效应差异"] = pair_table["残差含年份Spearman"] - pair_table["残差Spearman"]
+    pair_table["最大绝对相关"] = pair_table[["日Pearson", "日Spearman", "完整周Pearson", "完整周Spearman", "残差Pearson", "残差Spearman", "残差含年份Pearson", "残差含年份Spearman"]].abs().max(axis=1)
     pair_table = pair_table.sort_values("最大绝对相关", ascending=False)
     write_csv(pair_table, outputs / "correlation" / "品类_相关性_时间控制与周修正对照.csv")
     focus_names = [("辣椒类", "食用菌"), ("花叶类", "花菜类"), ("水生根茎类", "食用菌")]
@@ -369,7 +405,7 @@ def category_correlations(panel: pd.DataFrame, outputs: Path, figures: Path) -> 
     write_csv(focus_table, outputs / "correlation" / "品类_重点对_控制时间效应对照.csv")
     week_summary = pd.DataFrame([{"旧周样本数": len(weekly_all), "完整自然周样本数": len(weekly), "剔除周数": len(weekly_all) - len(weekly)}])
     write_csv(week_summary, outputs / "correlation" / "品类_周尺度样本修正摘要.csv")
-    return {"daily_p": daily_p, "daily_s": daily_s, "weekly_old_p": weekly_all_p, "weekly_old_s": weekly_all_s, "weekly_p": weekly_p, "weekly_s": weekly_s, "residual_p": residual_p, "residual_s": residual_s, "pairs": pair_table, "focus": focus_table, "weekly": weekly, "weekly_old": weekly_all, "residuals": residuals}
+    return {"daily_p": daily_p, "daily_s": daily_s, "weekly_old_p": weekly_all_p, "weekly_old_s": weekly_all_s, "weekly_p": weekly_p, "weekly_s": weekly_s, "residual_p": residual_p, "residual_s": residual_s, "residual_year_p": residual_year_p, "residual_year_s": residual_year_s, "pairs": pair_table, "focus": focus_table, "weekly": weekly, "weekly_old": weekly_all, "residuals": residuals, "residuals_year": residuals_year}
 
 
 def item_overlap_and_correlations(item_daily: pd.DataFrame, active: pd.DataFrame | None, outputs: Path, figures: Path) -> dict:
@@ -460,6 +496,33 @@ def item_overlap_and_correlations(item_daily: pd.DataFrame, active: pd.DataFrame
     write_csv(sensitivity, outputs / "correlation" / "单品_相关性门槛敏感性摘要.csv")
     write_csv(correlations.sort_values("最大绝对相关", ascending=False).head(100), outputs / "correlation" / "单品_相关性绝对值Top100.csv")
 
+    # Do not present hundreds of qualifying pairs as a flat list.  Summarize the
+    # relation structure and select examples with both adequate overlap and close
+    # Pearson/Spearman estimates.
+    robust = robust.copy()
+    robust["方向"] = np.where(robust["Pearson相关"] > 0, "正相关", "负相关")
+    robust["是否同品类"] = robust["分类名称_A"] == robust["分类名称_B"]
+    robust["品类组合"] = robust.apply(lambda r: " × ".join(sorted([r["分类名称_A"], r["分类名称_B"]])), axis=1)
+    structure_summary = pd.DataFrame([{
+        "稳健相关对总数": len(robust), "正相关对数": int((robust["方向"] == "正相关").sum()), "负相关对数": int((robust["方向"] == "负相关").sum()),
+        "同品类对数": int(robust["是否同品类"].sum()), "跨品类对数": int((~robust["是否同品类"]).sum()),
+    }])
+    write_csv(structure_summary, outputs / "correlation" / "单品_稳健相关对_结构摘要.csv")
+    structure_by_category = robust.groupby(["品类组合", "方向"], as_index=False).agg(
+        稳健相关对数=("单品编码_A", "size"), 共同销售日数中位数=("共同有销售记录日数", "median"),
+        Pearson中位数=("Pearson相关", "median"), Spearman中位数=("Spearman相关", "median"),
+        共同最弱相关绝对值中位数=("共同最弱相关绝对值", "median"),
+    ).sort_values(["稳健相关对数", "共同最弱相关绝对值中位数"], ascending=False)
+    write_csv(structure_by_category, outputs / "correlation" / "单品_稳健相关对_品类组合汇总.csv")
+    n_cutoff = robust["共同有销售记录日数"].quantile(.75)
+    representative_pool = robust[(robust["共同有销售记录日数"] >= n_cutoff) & (robust["Pearson_Spearman绝对差"] <= .10)].copy()
+    representative_pool["代表性排序分数"] = representative_pool["共同最弱相关绝对值"] * np.log1p(representative_pool["共同有销售记录日数"])
+    representatives = pd.concat([
+        representative_pool[representative_pool["方向"] == "正相关"].nlargest(3, "代表性排序分数"),
+        representative_pool[representative_pool["方向"] == "负相关"].nlargest(2, "代表性排序分数"),
+    ]).sort_values(["方向", "代表性排序分数"], ascending=[False, False])
+    write_csv(representatives, outputs / "correlation" / "单品_稳健相关对_代表性样本.csv")
+
     # Scatter examples use the robust set if it contains both signs.  Raw top
     # Pearson pairs remain tables only because a high Pearson alone is a clue.
     examples = []
@@ -482,7 +545,8 @@ def item_overlap_and_correlations(item_daily: pd.DataFrame, active: pd.DataFrame
     return {"overlap_summary": overlap_summary, "distribution": distribution, "threshold": threshold, "eligible_pairs": len(eligible),
             "correlations": correlations, "correlations_30": correlations_30, "correlations_60": correlations_60,
             "positive_30": pos30, "negative_30": neg30, "positive_60": pos60, "negative_60": neg60,
-            "robust": robust, "sensitivity": sensitivity}
+            "robust": robust, "sensitivity": sensitivity, "structure_summary": structure_summary,
+            "structure_by_category": structure_by_category, "representatives": representatives, "representative_n_cutoff": n_cutoff}
 
 
 def fmt(value: float, digits: int = 2) -> str:
@@ -492,6 +556,44 @@ def fmt(value: float, digits: int = 2) -> str:
 def markdown_table(df: pd.DataFrame, columns: list[str], n: int | None = None) -> str:
     selected = df[columns].head(n) if n else df[columns]
     return selected.to_markdown(index=False, floatfmt=".2f")
+
+
+def write_final_candidate_tables(category: dict, corr: dict, item_corr: dict, outputs: Path) -> dict:
+    """Write the shared missing-data rule and the paper-oriented evidence tables."""
+    final_dir = outputs / "final"
+    rules = pd.DataFrame([
+        {"统计问题": "三年总销量", "有效样本": "所有真实销售记录", "缺失处理": "直接求和；无销售记录日不另造 0", "完整窗口要求": "否"},
+        {"统计问题": "日均销量", "有效样本": "1085 个有销售记录日", "缺失处理": "仅这些有效日参与均值", "完整窗口要求": "否"},
+        {"统计问题": "月度平均日销量", "有效样本": "该月份的所有有效观测日", "缺失处理": "不要求该月完整，不删除相邻有效日", "完整窗口要求": "否"},
+        {"统计问题": "跨年度月份规律", "有效样本": "各 year-month 内的所有有效观测日", "缺失处理": "按 year-month 独立平均；半年度不当完整重复", "完整窗口要求": "否"},
+        {"统计问题": "星期规律", "有效样本": "所有有效周一、周二……", "缺失处理": "按星期分别平均，不因同周其他日缺失而删除", "完整窗口要求": "否"},
+        {"统计问题": "日尺度相关", "有效样本": "有效观测日", "缺失处理": "不把全店无销售记录日补为 0", "完整窗口要求": "否"},
+        {"统计问题": "周总销量及周尺度相关", "有效样本": "周一至周日均有销售记录的周", "缺失处理": "仅此处剔除 7 日不齐全的自然周", "完整窗口要求": "是：7 个销售记录日"},
+        {"统计问题": "单品相关", "有效样本": "两单品共同销售日", "缺失处理": "未知状态日期不补 0", "完整窗口要求": "否；使用 overlap 门槛"},
+    ])
+    write_csv(rules, final_dir / "统计口径与缺失处理.csv")
+    focus = corr["focus"].set_index(["品类A", "品类B"])
+    structure = item_corr["structure_summary"].iloc[0]
+    monthly = category["seasonal_stability"]
+    conclusion = pd.DataFrame([
+        {"结论": "品类规模和波动存在差异", "使用指标/图": "品类描述统计、总销量柱状图、箱线图", "数值证据": "花叶类总销量最高；水生根茎类 CV 最高", "稳健性验证": "1085 个有效日，未把 10 个无记录日补零", "论文表述限制": "描述性差异，不解释原因"},
+        {"结论": "月度模式跨完整年度总体不稳定", "使用指标/图": "2021/2022 月均曲线与一致性表", "数值证据": f"6 类中满足保守重复规则的类别数={int((monthly['判定'] == '完整年度间有一定重复线索').sum())}", "稳健性验证": "仅比较完整 2021、2022；2020/2023 仅作半年度旁证", "论文表述限制": "不能称已证明稳定季节性"},
+        {"结论": "辣椒类—食用菌存在较强的时间控制后同步线索", "使用指标/图": "日相关、完整周相关、残差相关", "数值证据": f"残差 Pearson/Spearman={focus.loc[('辣椒类','食用菌'),'残差Pearson']:.3f}/{focus.loc[('辣椒类','食用菌'),'残差Spearman']:.3f}；含年份={focus.loc[('辣椒类','食用菌'),'残差含年份Pearson']:.3f}/{focus.loc[('辣椒类','食用菌'),'残差含年份Spearman']:.3f}", "稳健性验证": "完整自然周与年份效应敏感性", "论文表述限制": "同步变化，不是因果"},
+        {"结论": "花叶类—花菜类与水生根茎类—食用菌仍有正向同步线索", "使用指标/图": "重点对照表与残差热图", "数值证据": "残差相关方向为正；见重点对照表", "稳健性验证": "完整周、含年份效应残差", "论文表述限制": "强度不同，不能外推为机制"},
+        {"结论": "单品关系需使用 overlap 与双相关筛选", "使用指标/图": "overlap 分布、门槛敏感性、稳健相关结构表", "数值证据": f"n≥30/60 Top20 交集=11；稳健对={int(structure['稳健相关对总数'])}，正/负={int(structure['正相关对数'])}/{int(structure['负相关对数'])}", "稳健性验证": "n≥60、Pearson/Spearman 同号且均≥0.40", "论文表述限制": "仅共同销售日线索；不证明替代或互补"},
+    ])
+    write_csv(conclusion, final_dir / "结论_证据_限制.csv")
+    candidate_figures = pd.DataFrame([
+        {"图或表": "品类总销量柱状图、日销量箱线图", "建议位置": "正文", "用途": "品类规模与波动"},
+        {"图或表": "跨年度月度规律图", "建议位置": "正文", "用途": "月度规律及其跨年限制"},
+        {"图或表": "完整自然周 Pearson/Spearman 热图", "建议位置": "正文", "用途": "周尺度品类同步关系"},
+        {"图或表": "残差 Pearson 热图", "建议位置": "正文", "用途": "控制时间规律后的品类关系"},
+        {"图或表": "单品销量排名与累计贡献、overlap 分布", "建议位置": "正文", "用途": "集中度与单品关系口径"},
+        {"图或表": "稳健单品对代表性样本表", "建议位置": "正文或附表", "用途": "少量可解释的单品关系线索"},
+        {"图或表": "旧含不完整周相关、全量 Top20/Top100、Pearson-Spearman 差异表", "建议位置": "分析目录/附录", "用途": "口径修正与稳健性审计，不作论文主结论"},
+    ])
+    write_csv(candidate_figures, final_dir / "论文候选图表清单.csv")
+    return {"rules": rules, "conclusion": conclusion, "figures": candidate_figures}
 
 
 def create_report(category: dict, item: dict, corr: dict, item_corr: dict, report_path: Path) -> None:
@@ -597,7 +699,7 @@ def create_report(category: dict, item: dict, corr: dict, item_corr: dict, repor
     report_path.write_text(report, encoding="utf-8")
 
 
-def create_second_round_report(category: dict, item: dict, corr: dict, item_corr: dict, report_path: Path) -> None:
+def create_second_round_report(category: dict, item: dict, corr: dict, item_corr: dict, final_tables: dict, report_path: Path) -> None:
     """Write the review-oriented report for the second EDA verification round."""
     cat_stats = category["stats"]
     item_stats = item["stats"]
@@ -605,11 +707,14 @@ def create_second_round_report(category: dict, item: dict, corr: dict, item_corr
     focus = corr["focus"]
     sensitivity = item_corr["sensitivity"].iloc[0]
     robust = item_corr["robust"]
+    seasonal = category["seasonal_stability"]
+    structure = item_corr["structure_summary"].iloc[0]
+    representatives = item_corr["representatives"]
     old_weeks, full_weeks = len(corr["weekly_old"]), len(corr["weekly"])
     robust_text = "未出现满足全部规则的单品对。" if robust.empty else (
         f"筛得 {len(robust)} 对；强度最高的是 **{robust.iloc[0]['单品名称_A']}—{robust.iloc[0]['单品名称_B']}** "
         f"（n={int(robust.iloc[0]['共同有销售记录日数'])}，Pearson={robust.iloc[0]['Pearson相关']:.2f}，Spearman={robust.iloc[0]['Spearman相关']:.2f}）。")
-    report = f"""# 2023 年 CUMCM C 题：问题一 EDA（第二轮验证）
+    report = f"""# 2023 年 CUMCM C 题：问题一 EDA（第三轮收口候选版）
 
 > 本轮只验证问题一的统计规律与相关关系；不包含预测、补货、定价和问题二、问题三。运行 `problem1_eda.py` 可从问题一 CSV 重新生成本报告、所有表和图。
 
@@ -619,6 +724,12 @@ def create_second_round_report(category: dict, item: dict, corr: dict, item_corr
 - 在已观测日期，缺失的品类记录可记为该品类 0 销量；单品缺失记录不自动补零。
 - 单品相关只在两件单品都有销售记录的共同日期计算，表示条件性的同步变化，不表示全在售期需求、更不表示因果。
 
+### 统计口径与缺失处理
+
+{markdown_table(final_tables['rules'], ['统计问题','有效样本','缺失处理','完整窗口要求'])}
+
+核心原则是：**无销售记录日不等于销量 0；但缺少某一天，也不意味着附近其他有效日必须一起删除。只有统计量依赖固定完整时间窗口时，才要求窗口完整。** 因此仅周总销量和周尺度相关要求完整自然周。
+
 ## A. 描述性规律
 
 ### 六品类销售分布
@@ -627,7 +738,13 @@ def create_second_round_report(category: dict, item: dict, corr: dict, item_corr
 
 花叶类总销量最高（{cat_stats.iloc[0]['总销量_kg']:.1f} kg），茄类最低（{cat_stats.iloc[-1]['总销量_kg']:.1f} kg）；水生根茎类 CV 最高（{cat_stats['CV'].max():.2f}），花叶类最低（{cat_stats['CV'].min():.2f}）。这些仅为规模与波动的描述，不解释形成机制。
 
-月度规律同时提供“合并月份平均”和 `品类_跨年度月度规律.png`。后者把 2020、2021、2022、2023 的年内月份分开绘制：2020 年只有 7—12 月、2023 年只有 1—6 月，因此跨年度重复性应以完整的 2021、2022 年为主要依据，首尾两年只提供半年度旁证。只有跨年曲线重复的峰谷才适合称为稳定季节线索；不一致的月份差异只作为汇总描述。星期规律保留在 `品类_星期日均销量.png`。
+月度规律同时提供“合并月份平均”和 `品类_跨年度月度规律.png`。后者把 2020、2021、2022、2023 的年内月份分开绘制：2020 年只有 7—12 月、2023 年只有 1—6 月，因此跨年度重复性以完整的 2021、2022 年为主要依据，首尾两年只提供半年度旁证。28 日图已修正为**28 日历日窗口内的有效观测日平均**；长期趋势统计也改用距起始日期的实际日历天数，两项修正未改变品类规模、星期差异或相关关系的主结论。
+
+### 2021/2022 月份曲线一致性
+
+{markdown_table(seasonal, ['分类名称','2021_2022月均曲线Pearson','2021_2022月均曲线Spearman','2021_峰值月份','2022_峰值月份','2021_低谷月份','2022_低谷月份','判定'])}
+
+在保守规则（两种曲线相关均≥0.50，且峰值、低谷月份均相差不超过 1 个月）下，没有品类满足“完整年度间有一定重复线索”。因此月份图可用于描述年度内变化，但本数据不能据此写成“已证明稳定季节性”。星期规律仍可描述为所有对应有效星期日的平均差异。
 
 单品层共有 {int(item_summary['单品数'])} 个实际销售单品，Top 10/Top 20 分别贡献 {item_summary['Top10销量占比']:.1%}/{item_summary['Top20销量占比']:.1%} 总销量；销售天数中位数为 {item_summary['销售天数中位数']:.0f} 天。见 `单品_销量排名与累计贡献.png`、`单品_销售天数与波动分布.png`。
 
@@ -643,9 +760,9 @@ def create_second_round_report(category: dict, item: dict, corr: dict, item_corr
 
 ### 重点品类对：原始、修正周和残差相关
 
-{markdown_table(focus, ['品类A','品类B','日Pearson','日Spearman','旧周Pearson','完整周Pearson','周Pearson修正差异','旧周Spearman','完整周Spearman','周Spearman修正差异','残差Pearson','残差Spearman'])}
+{markdown_table(focus, ['品类A','品类B','日Pearson','完整周Pearson','残差Pearson','残差Spearman','残差含年份Pearson','残差含年份Spearman'])}
 
-残差由一个可解释的加性最小二乘模型得到：星期虚拟变量、月份虚拟变量和实际日历日的线性趋势。残差相关检验的是控制这三类共同时间规律后，日销量偏离是否仍同步；它没有控制价格、促销、供给和其他混杂因素，因此**不能作因果解释**。论文若保留品类关系，应优先呈现原始日尺度热图、完整自然周热图和残差热图三者均支持的方向。
+主残差由星期虚拟变量、月份虚拟变量和实际日历日线性趋势的加性最小二乘模型得到；敏感性模型额外加入年份固定效应。三组重点对加入年份后方向和量级仍为正且相近，因而可称为“对该时间控制设定具有一定稳健性”。它没有控制价格、促销、供给等混杂因素，**不能作因果解释**。论文若保留品类关系，应优先呈现原始日尺度、完整自然周与残差热图均支持的方向。
 
 ## C. 仅作为线索的单品关系：真正的门槛敏感性分析
 
@@ -653,7 +770,13 @@ def create_second_round_report(category: dict, item: dict, corr: dict, item_corr
 
 n≥30 中 Pearson/Spearman 异号对有 {int(sensitivity['n≥30 Pearson与Spearman异号对数']):,} 对，n≥60 中有 {int(sensitivity['n≥60 Pearson与Spearman异号对数']):,} 对。这些以及两指标绝对值相差大的单品对均不能当作稳健关系；详见 `单品_Pearson与Spearman差异Top50.csv`。
 
-本报告定义“稳健相关对”为：共同销售日 n≥60、Pearson 与 Spearman 同号、且两者绝对值均≥0.40。{robust_text} 完整名单在 `单品_稳健相关对_n不少于60.csv`。n≥30/n≥60 的正负 Top20 与敏感性摘要也均已输出；单靠 Pearson Top20 不进入论文主要结论。
+本报告定义“稳健相关对”为：共同销售日 n≥60、Pearson 与 Spearman 同号、且两者绝对值均≥0.40。{robust_text} 其中正相关 {int(structure['正相关对数'])} 对、负相关 {int(structure['负相关对数'])} 对；同品类 {int(structure['同品类对数'])} 对、跨品类 {int(structure['跨品类对数'])} 对。完整名单、品类组合结构和代表性样本分别见 `单品_稳健相关对_n不少于60.csv`、`单品_稳健相关对_品类组合汇总.csv`、`单品_稳健相关对_代表性样本.csv`。
+
+### 代表性单品关系样本
+
+{markdown_table(representatives, ['方向','单品名称_A','分类名称_A','单品名称_B','分类名称_B','共同有销售记录日数','Pearson相关','Spearman相关'], 5)}
+
+代表样本要求共同销售日不低于稳健对的上四分位数，且两种相关差异不超过 0.10；它们更适合作为论文例子。负相关仅可称为反向同步或可能的替代性线索。
 
 ## 【数据层】
 
@@ -677,11 +800,13 @@ n≥30 中 Pearson/Spearman 异号对有 {int(sensitivity['n≥30 Pearson与Spea
 
 ## 【暂时结论】
 
-论文图优先选择：品类总量/箱线图、跨年度月度图、完整自然周和残差相关热图，以及 overlap 分布图。单品关系只引用稳健相关表中的少量对，并写明 n 与双相关系数。
+最终收口表见 `outputs/final/结论_证据_限制.csv`。正文建议保留：品类总销量/箱线图、跨年度月度图、完整自然周相关热图、残差 Pearson 热图、单品累计贡献图、overlap 分布图，以及代表性稳健单品对表，共 5—8 张图。旧含不完整周相关、全量 Top20/Top100 和 Pearson-Spearman 差异表只放分析目录或附录，明确为修正对照，不作为论文结论。
+
+建议正文按以下结论写作：品类分布写规模排序、相对波动差异、星期差异，并说明月份规律跨完整年度不稳定；单品分布写销量集中度、销售天数差异和不宜统一补零；品类关系写三组经完整周与残差验证后仍为正的同步线索；单品关系写 overlap 约束、筛选规则和少量代表性正相关，负相关仅写反向同步线索。
 
 ## 【下一步】
 
-请审核重点品类对的残差相关和跨年度月度曲线；确认有业务解释的稳健单品对后，再决定是否需要问题一第三轮分析。暂不进入预测或优化。
+本轮到此暂停，等待审核；暂不进入预测或优化。
 """
     report_path.write_text(report, encoding="utf-8")
 
@@ -710,7 +835,8 @@ def main() -> None:
     item = item_analysis(item_daily, active, outputs, figures)
     corr = category_correlations(category["panel"], outputs, figures)
     item_corr = item_overlap_and_correlations(item_daily, active, outputs, figures)
-    create_second_round_report(category, item, corr, item_corr, analysis_dir / "problem1_eda_report.md")
+    final_tables = write_final_candidate_tables(category, corr, item_corr, outputs)
+    create_second_round_report(category, item, corr, item_corr, final_tables, analysis_dir / "problem1_eda_report.md")
     print(f"Wrote EDA report, tables and figures under: {analysis_dir}")
 
 
