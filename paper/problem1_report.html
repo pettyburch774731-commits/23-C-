@@ -4,207 +4,106 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>2023 CUMCM C 题问题一分析报告</title>
-  <script>
-    MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] } };
-  </script>
+  <script>MathJax = {tex:{inlineMath:[['\\(','\\)']],displayMath:[['$$','$$']]}};</script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
-    :root { --ink:#1f2937; --muted:#5b6472; --blue:#185a9d; --pale:#eef6ff; --line:#d8e1ea; --warn:#fff6df; }
-    * { box-sizing:border-box; }
-    body { margin:0; background:#f4f7fa; color:var(--ink); font:16px/1.75 "Microsoft YaHei", "Noto Sans SC", Arial, sans-serif; }
-    main { max-width:1080px; margin:28px auto; background:#fff; padding:48px 62px 64px; box-shadow:0 2px 16px #1c36511c; }
-    h1 { color:#103e6c; font-size:30px; line-height:1.35; margin:0 0 6px; }
-    h2 { border-left:5px solid var(--blue); padding-left:12px; margin:42px 0 14px; font-size:22px; color:#133e69; }
-    h3 { margin:26px 0 8px; color:#1f5589; font-size:18px; }
-    p { margin:10px 0; }
-    .subtitle { color:var(--muted); margin:0 0 24px; }
-    .lead, .note { padding:14px 18px; border-radius:6px; }
-    .lead { background:var(--pale); border-left:4px solid #3885c7; }
-    .note { background:var(--warn); border-left:4px solid #e2ad3a; }
-    .toc { columns:2; padding:16px 22px; border:1px solid var(--line); background:#fafcff; }
-    .toc a { color:var(--blue); text-decoration:none; }
-    table { width:100%; border-collapse:collapse; margin:14px 0 22px; font-size:14px; }
-    th, td { border:1px solid var(--line); padding:8px 10px; vertical-align:top; }
-    th { background:#edf4fa; color:#143d66; }
-    .num { text-align:right; white-space:nowrap; }
-    ul, ol { margin-top:6px; }
-    code { background:#f0f3f6; padding:1px 5px; border-radius:3px; font-family:Consolas, monospace; }
-    figure { margin:24px auto; text-align:center; }
-    figure img { max-width:100%; border:1px solid var(--line); border-radius:4px; }
-    figcaption { color:var(--muted); font-size:14px; margin-top:6px; }
-    .formula { background:#fbfcfe; border:1px solid var(--line); padding:8px 18px; overflow:auto; }
-    .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
-    .tag { display:inline-block; background:#e3f0fc; color:#155387; padding:2px 8px; border-radius:20px; font-size:13px; margin-right:5px; }
-    footer { border-top:1px solid var(--line); margin-top:42px; padding-top:14px; color:var(--muted); font-size:14px; }
-    @media (max-width:760px) { main { margin:0; padding:28px 18px; } .grid,.toc { columns:1; display:block; } }
-    @media print { body { background:#fff; } main { box-shadow:none; margin:0; max-width:none; } }
+    :root{--ink:#1f2937;--muted:#5b6472;--blue:#185a9d;--line:#d8e1ea;--pale:#eef6ff;--warn:#fff6df}
+    *{box-sizing:border-box} body{margin:0;background:#f4f7fa;color:var(--ink);font:16px/1.75 "Microsoft YaHei","Noto Sans SC",Arial,sans-serif}
+    main{max-width:1080px;margin:28px auto;background:#fff;padding:48px 62px 64px;box-shadow:0 2px 16px #1c36511c}
+    h1{color:#103e6c;font-size:30px;line-height:1.35;margin:0 0 6px} h2{border-left:5px solid var(--blue);padding-left:12px;margin:42px 0 14px;font-size:22px;color:#133e69} h3{margin:26px 0 8px;color:#1f5589;font-size:18px}
+    .subtitle{color:var(--muted);margin:0 0 24px}.lead,.note{padding:14px 18px;border-radius:6px}.lead{background:var(--pale);border-left:4px solid #3885c7}.note{background:var(--warn);border-left:4px solid #e2ad3a}
+    .toc{columns:2;padding:16px 22px;border:1px solid var(--line);background:#fafcff}.toc a{color:var(--blue);text-decoration:none}
+    table{width:100%;border-collapse:collapse;margin:14px 0 22px;font-size:14px}th,td{border:1px solid var(--line);padding:8px 10px;vertical-align:top}th{background:#edf4fa;color:#143d66}.num{text-align:right;white-space:nowrap}
+    figure{margin:24px auto;text-align:center}figure img{max-width:100%;border:1px solid var(--line);border-radius:4px}figcaption{color:var(--muted);font-size:14px;margin-top:6px}.formula{background:#fbfcfe;border:1px solid var(--line);padding:8px 18px;overflow:auto}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.tag{display:inline-block;background:#e3f0fc;color:#155387;padding:2px 8px;border-radius:20px;font-size:13px;margin-right:5px}
+    footer{border-top:1px solid var(--line);margin-top:42px;padding-top:14px;color:var(--muted);font-size:14px}@media(max-width:760px){main{margin:0;padding:28px 18px}.grid,.toc{columns:1;display:block}}@media print{body{background:#fff}main{box-shadow:none;margin:0;max-width:none}}
   </style>
 </head>
 <body>
 <main>
   <h1>2023 年全国大学生数学建模竞赛 C 题<br>问题一分析报告</h1>
-  <p class="subtitle">蔬菜品类与单品销售量的分布规律及相互关系｜论文初稿的说明版</p>
-  <div class="lead">
-    <strong>这份报告做了什么？</strong> 我们没有做销量预测、补货优化或定价优化。本报告只回答问题一：六个蔬菜品类和 246 个实际销售单品的销量如何分布、随时间如何变化，以及它们之间是否存在可靠的同步变化线索。
-  </div>
+  <p class="subtitle">蔬菜品类与单品销售量的分布规律及相互关系｜论文初稿说明版</p>
+  <div class="lead"><strong>本报告范围：</strong>只回答问题一，不涉及销量预测、补货优化或定价优化。分析围绕六个品类与 246 个实际销售单品的销量分布、时间变化和同步关系展开。</div>
 
   <h2>阅读导航</h2>
-  <div class="toc">
-    <ol>
-      <li><a href="#goal">研究目标与分析路线</a></li>
-      <li><a href="#data">使用的数据与数据质量</a></li>
-      <li><a href="#rule">统计口径与缺失处理</a></li>
-      <li><a href="#method">用了哪些统计方法和公式</a></li>
-      <li><a href="#category">品类销量分布与时间规律</a></li>
-      <li><a href="#relation">品类之间的关系</a></li>
-      <li><a href="#item">单品分布与单品关系</a></li>
-      <li><a href="#conclusion">最终结论、图表取舍与限制</a></li>
-      <li><a href="#reproduce">如何复现</a></li>
-    </ol>
-  </div>
+  <div class="toc"><ol>
+    <li><a href="#route">研究思路与数据口径</a></li><li><a href="#method">统计方法与公式</a></li>
+    <li><a href="#category">品类销量分布规律</a></li><li><a href="#category-relation">品类之间的相互关系</a></li>
+    <li><a href="#item">单品销量分布规律</a></li><li><a href="#item-relation">单品之间的相互关系</a></li>
+    <li><a href="#summary">结论、图表取舍与限制</a></li>
+  </ol></div>
 
-  <h2 id="goal">1. 研究目标与分析路线</h2>
-  <p>问题一要求分析四类内容：各品类销量分布、各单品销量分布、品类之间的关系、单品之间的关系。为避免一开始就用复杂模型掩盖数据本身的规律，分析按以下四层推进：</p>
-  <p><span class="tag">第一层</span>描述性统计：比较销量规模、均值、中位数、波动和分布形态；<br>
-  <span class="tag">第二层</span>时间规律：观察星期、月份和低频时间变化；<br>
-  <span class="tag">第三层</span>品类关系：在日尺度、完整自然周尺度和控制时间因素后的残差尺度上比较相关性；<br>
-  <span class="tag">第四层</span>单品关系：只在两个商品共同出现销售记录的日期上计算相关性，避免错误补零。</p>
+  <h2 id="route">1. 研究思路与数据口径</h2>
+  <p>问题一按四块组织：<strong>品类销量分布规律、品类之间的相互关系、单品销量分布规律、单品之间的相互关系</strong>。品类数量少且持续观测，适合研究总体时间变化和多尺度关系；单品的上架、退出和销售覆盖期不同，因此单品统计只在有销售记录日上计算，单品关系只在共同销售日上计算。</p>
+  <div class="note"><strong>缺失处理原则：</strong>无销售记录日不等同于销量为 0；但某一天缺失不意味着附近有效日也必须删除。日均、月均、星期规律和日尺度相关使用各自有效观测日；只有周尺度相关要求周一至周日均有销售记录的完整自然周；单品未知状态日期从不补零。</div>
+  <table><thead><tr><th>数据审计结果</th><th>数值/结论</th></tr></thead><tbody>
+    <tr><td>销售日期范围</td><td>2020-07-01 至 2023-06-30，共 1095 个日历日</td></tr>
+    <tr><td>全店无销售记录日</td><td>10 天；不称为停业日，也不补为零销量</td></tr>
+    <tr><td>有效销售日期</td><td>1085 天</td></tr>
+    <tr><td>实际销售单品</td><td>246 个；单品日汇总记录 46595 条</td></tr>
+  </tbody></table>
 
-  <h2 id="data">2. 使用的数据与数据质量</h2>
-  <p>本报告使用附件 1 的商品分类信息和附件 2 的销售流水。附件 3、附件 4 未参与问题一。数据审计确认：附件 1 中单品编码与名称、所属分类之间的映射一致；附件 2 的销售日期范围为 2020-07-01 至 2023-06-30，共 1095 个日历日。</p>
-  <table>
-    <thead><tr><th>审计与处理结果</th><th>数值/结论</th><th>分析中如何使用</th></tr></thead>
-    <tbody>
-      <tr><td>原始销售流水</td><td>878503 条；正常销售 878042 条，退货 461 条</td><td>问题一主分析使用正常销售量，退货信息保留在审计文件中</td></tr>
-      <tr><td>有效销售日期</td><td>1085 天</td><td>日均、月份、星期和日尺度关系均基于对应有效日期</td></tr>
-      <tr><td>全店无销售记录日</td><td>10 天</td><td>不擅自写成销量 0，不称为停业日</td></tr>
-      <tr><td>实际销售单品</td><td>246 个</td><td>单品关系分析的对象</td></tr>
-      <tr><td>单品日记录</td><td>46595 条“日期×单品”汇总记录</td><td>计算单品销量、覆盖期和共同销售日</td></tr>
-      <tr><td>品类日记录</td><td>6474 条“日期×品类”汇总记录</td><td>构造六品类日销量面板</td></tr>
-    </tbody>
-  </table>
-  <p>同一单品同一天可能以不同零售单价销售，因此平均零售单价始终采用“当日销售额 ÷ 当日销量”的销量加权口径。该价格变量没有用于问题一的因果推断。</p>
-
-  <h2 id="rule">3. 统计口径与缺失处理</h2>
-  <p class="note"><strong>最重要的口径：</strong>“无销售记录日”不等同于“销量为 0”；但缺少某一天，也不意味着附近其他有效日必须一起删除。只有统计量本身依赖固定完整时间窗口时，才要求窗口完整。</p>
-  <table>
-    <thead><tr><th>统计问题</th><th>有效样本</th><th>缺失处理</th><th>是否要求完整时间窗口</th></tr></thead>
-    <tbody>
-      <tr><td>三年总销量</td><td>所有真实销售记录</td><td>直接求和；不另造零销量日</td><td>否</td></tr>
-      <tr><td>日均销量</td><td>1085 个有销售记录日</td><td>仅这些有效日参与均值</td><td>否</td></tr>
-      <tr><td>月度平均日销量</td><td>该月内所有有效观测日</td><td>月份不完整也保留已有有效日</td><td>否</td></tr>
-      <tr><td>跨年度月份规律</td><td>各 year-month 内所有有效观测日</td><td>每个 year-month 独立计算平均；半年度不当作完整重复</td><td>否</td></tr>
-      <tr><td>星期规律</td><td>所有有效周一、周二……</td><td>按星期分别平均，不因同周其他天缺失而删除</td><td>否</td></tr>
-      <tr><td>日尺度相关</td><td>有效观测日</td><td>不把 10 个全店无记录日补零</td><td>否</td></tr>
-      <tr><td>周总销量和周相关</td><td>周一至周日均有销售记录的周</td><td>只保留完整自然周</td><td>是，7 天齐全</td></tr>
-      <tr><td>单品相关</td><td>两个单品共同销售日</td><td>未知状态日期不补零</td><td>否，使用样本量门槛</td></tr>
-    </tbody>
-  </table>
-
-  <h2 id="method">4. 使用的方法和公式</h2>
-  <h3>4.1 描述性统计</h3>
-  <p>设某品类或单品在有效销售日的销量为 (x_1,x_2,ldots,x_n)。平均销量、标准差和变异系数分别为：</p>
-  <div class="formula">
-    $$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i,$$
-    $$s=\sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2},$$
-    $$CV=\frac{s}{\bar{x}}.$$
-  </div>
-  <p>平均值描述典型有效销售日的销量；标准差衡量绝对波动；CV 消除了平均销量规模不同带来的影响，因此可以公平比较品类的相对波动。第一、第三四分位数描述主体区间，正偏度提示少数高销量日使分布出现右尾。</p>
-
-  <h3>4.2 Pearson 与 Spearman 相关</h3>
-  <p>对于两个销量序列 (x,y)，Pearson 相关系数为：</p>
+  <h2 id="method">2. 统计方法与公式</h2>
+  <p>设某对象在相应有效销售日上的销量为 \(x_1,x_2,\ldots,x_n\)，使用平均销量、标准差和变异系数描述典型水平、绝对波动和相对波动：</p>
+  <div class="formula">$$\bar{x}=\frac{1}{n}\sum_{i=1}^{n}x_i,\qquad s=\sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2},\qquad CV=\frac{s}{\bar{x}}.$$</div>
+  <p>第一、第三四分位数 \(Q_1,Q_3\) 描述主体区间；偏度用于识别少数高销量日形成的右尾。Pearson 相关衡量线性同步变化，Spearman 相关先将销量转换为秩，对极端观测更稳健：</p>
   <div class="formula">$$r_{xy}=\frac{\sum_{i=1}^{n}(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum_{i=1}^{n}(x_i-\bar{x})^2}\sqrt{\sum_{i=1}^{n}(y_i-\bar{y})^2}}.$$</div>
-  <p>它衡量线性同步变化。Spearman 相关先将销量变为秩，再衡量排序变化是否同步，因此对少数极端值相对更稳健。两种相关同时较高且同号时，关系比只看 Pearson 更可靠。</p>
 
-  <h3>4.3 控制时间规律后的残差相关</h3>
-  <p>品类销量可能同时受到星期、月份和长期变化影响。为避免把共同日历规律误判为品类关系，对每个品类的日销量拟合：</p>
+  <h2 id="category">3. 品类销量分布规律</h2>
+  <p><strong>销售规模与波动：</strong>花叶类三年总销量最高（198659.55 kg），茄类最低（22442.12 kg）。花叶类 CV 为 0.47，在六类中最低，表现为规模最大且相对稳定；水生根茎类 CV 为 0.84，表现为相对波动最强。各品类偏度均为正，说明均存在不同程度的右尾。</p>
+  <table><thead><tr><th>品类</th><th class="num">总销量/kg</th><th class="num">日均/kg</th><th class="num">中位数/kg</th><th class="num">标准差/kg</th><th class="num">CV</th><th class="num">Q1/kg</th><th class="num">Q3/kg</th><th class="num">偏度</th></tr></thead><tbody>
+    <tr><td>花叶类</td><td class="num">198659.55</td><td class="num">183.10</td><td class="num">173.21</td><td class="num">86.30</td><td class="num">0.47</td><td class="num">128.70</td><td class="num">223.66</td><td class="num">2.90</td></tr>
+    <tr><td>辣椒类</td><td class="num">91645.11</td><td class="num">84.47</td><td class="num">72.93</td><td class="num">53.46</td><td class="num">0.63</td><td class="num">51.24</td><td class="num">102.13</td><td class="num">3.14</td></tr>
+    <tr><td>食用菌</td><td class="num">76131.73</td><td class="num">70.17</td><td class="num">57.54</td><td class="num">48.52</td><td class="num">0.69</td><td class="num">39.32</td><td class="num">89.19</td><td class="num">3.00</td></tr>
+    <tr><td>花菜类</td><td class="num">41789.78</td><td class="num">38.52</td><td class="num">34.07</td><td class="num">22.71</td><td class="num">0.59</td><td class="num">23.31</td><td class="num">48.62</td><td class="num">1.52</td></tr>
+    <tr><td>水生根茎类</td><td class="num">40607.55</td><td class="num">37.43</td><td class="num">30.29</td><td class="num">31.37</td><td class="num">0.84</td><td class="num">15.09</td><td class="num">50.85</td><td class="num">2.50</td></tr>
+    <tr><td>茄类</td><td class="num">22442.12</td><td class="num">20.68</td><td class="num">18.32</td><td class="num">13.49</td><td class="num">0.65</td><td class="num">11.68</td><td class="num">26.83</td><td class="num">1.59</td></tr>
+  </tbody></table>
+  <div class="grid"><figure><img src="../analysis/problem1/figures/品类_总销量柱状图.png" alt="品类总销量"><figcaption>图 1 六个品类三年总销量</figcaption></figure><figure><img src="../analysis/problem1/figures/品类_日销量箱线图.png" alt="品类日销量箱线图"><figcaption>图 2 品类日销量分布</figcaption></figure></div>
+  <p><strong>时间规律：</strong>按自然星期计算，周六、周日平均销量普遍高于多数工作日。当前未单独剔除法定节假日与调休日期，因此这一结果只能表述为自然星期下的描述性差异，不能完全解释为纯粹的普通工作日/周末效应，更不据此推断客流、家庭采购或商场活动等机制。</p>
+  <p>月度均值有变化，但完整的 2021、2022 年比较后，六个品类均未同时满足“Pearson 与 Spearman 均不低于 0.50，且峰值、低谷月份均相差不超过 1 个月”的保守重复规则。因此只能表述为月度变化特征，不能认定为稳定季节规律。28 日历日窗口内的有效观测日平均和长期趋势图仅辅助展示低频变化。</p>
+  <figure><img src="../analysis/problem1/figures/品类_跨年度月度规律.png" alt="跨年度月度规律"><figcaption>图 3 月度变化的跨年度对照；完整年度核验以 2021 和 2022 为主</figcaption></figure>
+
+  <h2 id="category-relation">4. 品类之间的相互关系</h2>
+  <p>同时计算日尺度与完整自然周尺度的 Pearson/Spearman 相关。完整自然周仅保留周一至周日均有销售记录的 150 周；旧的 157 周汇总口径包含无销售记录日和首尾不完整周，只作审计对照。</p>
+  <p>为避免两个品类只是因为都在周末较高、都随月份变化而表现出表面相关，对各品类日销量使用下式控制星期、月份和长期线性趋势：</p>
   <div class="formula">$$y_t=\beta_0+\beta_1t+\gamma_{\mathrm{weekday}(t)}+\delta_{\mathrm{month}(t)}+\varepsilon_t.$$</div>
-  <p>其中 (t) 是距起始日期的实际日历天数，(gamma) 和 (delta) 分别表示星期、月份效应，(arepsilon_t) 是去除这些时间规律后的剩余波动。再计算不同品类残差 (arepsilon_t) 的相关系数。作为敏感性检验，还增加了年份固定效应；这仍然不是因果模型，因为价格、促销、供给等因素没有被控制。</p>
+  <p>其中 \(t\) 是距起始日期的实际日历天数，\(\varepsilon_t\) 是去除共同时间规律后的剩余波动；另加入年份固定效应作为敏感性检验。下列关系可称为“控制时间规律后仍存在正向同步变化”，不能解释为因果、互补或替代。</p>
+  <table><thead><tr><th>品类对</th><th class="num">日 Pearson</th><th class="num">完整周 Pearson</th><th class="num">残差 Pearson</th><th class="num">残差 Spearman</th><th class="num">年份效应残差 Pearson</th></tr></thead><tbody>
+    <tr><td>辣椒类—食用菌</td><td class="num">0.69</td><td class="num">0.54</td><td class="num">0.74</td><td class="num">0.62</td><td class="num">0.74</td></tr>
+    <tr><td>花叶类—花菜类</td><td class="num">0.63</td><td class="num">0.68</td><td class="num">0.57</td><td class="num">0.54</td><td class="num">0.56</td></tr>
+    <tr><td>水生根茎类—食用菌</td><td class="num">0.67</td><td class="num">0.57</td><td class="num">0.56</td><td class="num">0.35</td><td class="num">0.63</td></tr>
+  </tbody></table>
+  <div class="grid"><figure><img src="../analysis/problem1/figures/品类_周尺度完整自然周Pearson热力图.png" alt="完整自然周相关"><figcaption>图 4 完整自然周 Pearson 相关</figcaption></figure><figure><img src="../analysis/problem1/figures/品类_残差Pearson热力图.png" alt="残差相关"><figcaption>图 5 控制时间规律后的残差 Pearson 相关</figcaption></figure></div>
 
-  <h3>4.4 单品共同销售日（overlap）</h3>
-  <p>对单品 (i,j)，令 (T_i,T_j) 分别为它们有销售记录的日期集合：</p>
+  <h2 id="item">5. 单品销量分布规律</h2>
+  <p><strong>销量集中：</strong>246 个实际销售单品中，销量 Top 10 贡献约 39.1%，Top 20 贡献约 57.2%。少数高销量单品贡献较大比例销售量，但这些结果不足以证明单品销量服从某种特定幂律或长尾分布。</p>
+  <p><strong>覆盖期与有销售日波动：</strong>单品销售天数中位数仅为 81 天。分析表逐个记录首次销售日期、最后销售日期、活跃跨度、销售天数及其占活跃跨度比例；有销售日均值、中位数、标准差和 CV 也只在单品实际有销售记录的日期上计算。未出现日期可能表示尚未上架、已退出或状态未知，不能自动解释为零销量。因此不对全部 246 个单品机械补做星期、月份或长期趋势分析，以免把覆盖期差异误读为季节性。</p>
+  <figure><img src="../analysis/problem1/figures/单品_销量排名与累计贡献.png" alt="单品销量排名与累计贡献"><figcaption>图 6 单品销量排名与累计贡献</figcaption></figure>
+
+  <h2 id="item-relation">6. 单品之间的相互关系</h2>
+  <p>令 \(T_i,T_j\) 分别为单品 \(i,j\) 有销售记录的日期集合，则</p>
   <div class="formula">$$T_{ij}=T_i\cap T_j,\qquad n_{ij}=|T_{ij}|.$$</div>
-  <p>只在集合 (T_{ij}) 上计算相关性。246 个单品构成 (inom{246}{2}=30135) 个单品对。最终的稳健筛选规则为：</p>
-  <div class="formula">$$n_{ij}\geq60,\quad \operatorname{sign}(r^{(P)}_{ij})=\operatorname{sign}(r^{(S)}_{ij}),\quad \min(|r^{(P)}_{ij}|,|r^{(S)}_{ij}|)\geq0.40.$$</div>
-  <p>这条规则要求共同销售日不少于 60 天、两种相关同号且都达到中等强度，目的在于排除小样本偶然高相关和“Pearson 很高但 Spearman 很低或异号”的不稳健结果。</p>
+  <p>只在共同销售日期集合 \(T_{ij}\) 上计算相关。246 个单品共有 \(\binom{246}{2}=30135\) 对，但共同销售日数的 Q1、中位数、Q3 分别为 0、1、18 天，故不能对全部单品对无条件解释相关系数。</p>
+  <p>先比较 \(n\ge30\) 和 \(n\ge60\) 两个样本量门槛；正文主结论采用更严格的规则：</p>
+  <div class="formula">$$n_{ij}\geq60,\quad \operatorname{sign}(r^{(P)}_{ij})=\operatorname{sign}(r^{(S)}_{ij}),\quad \min\left(|r^{(P)}_{ij}|,|r^{(S)}_{ij}|\right)\geq0.40.$$</div>
+  <p>即共同销售日不少于 60 天，Pearson/Spearman 同号且均达到中等强度。筛选得到 269 对稳健关系：267 对正相关、2 对负相关；96 对同品类、173 对跨品类。完整名单、Top100 和 Pearson/Spearman 差异明细仅留在分析目录或附录。</p>
+  <table><thead><tr><th>代表性单品对</th><th>类型</th><th class="num">共同销售日</th><th class="num">Pearson</th><th class="num">Spearman</th><th>正文表述</th></tr></thead><tbody>
+    <tr><td>云南生菜(份)—云南油麦菜(份)</td><td>同品类正相关</td><td class="num">387</td><td class="num">0.727</td><td class="num">0.721</td><td>正向同步线索</td></tr>
+    <tr><td>上海青—云南油麦菜</td><td>同品类正相关</td><td class="num">765</td><td class="num">0.563</td><td class="num">0.599</td><td>正向同步线索</td></tr>
+    <tr><td>大白菜—平菇</td><td>跨品类正相关</td><td class="num">262</td><td class="num">0.700</td><td class="num">0.746</td><td>正向同步线索</td></tr>
+    <tr><td>大白菜—甜白菜</td><td>同品类负相关</td><td class="num">248</td><td class="num">-0.450</td><td class="num">-0.599</td><td>反向同步线索；替代性需进一步验证</td></tr>
+  </tbody></table>
 
-  <h2 id="category">5. 品类销量分布与时间规律</h2>
-  <table>
-    <thead><tr><th>品类</th><th class="num">总销量/kg</th><th class="num">日均/kg</th><th class="num">标准差/kg</th><th class="num">CV</th><th class="num">偏度</th></tr></thead>
-    <tbody>
-      <tr><td>花叶类</td><td class="num">198659.55</td><td class="num">183.10</td><td class="num">86.30</td><td class="num">0.47</td><td class="num">2.90</td></tr>
-      <tr><td>辣椒类</td><td class="num">91645.11</td><td class="num">84.47</td><td class="num">53.46</td><td class="num">0.63</td><td class="num">3.14</td></tr>
-      <tr><td>食用菌</td><td class="num">76131.73</td><td class="num">70.17</td><td class="num">48.52</td><td class="num">0.69</td><td class="num">3.00</td></tr>
-      <tr><td>花菜类</td><td class="num">41789.78</td><td class="num">38.52</td><td class="num">22.71</td><td class="num">0.59</td><td class="num">1.52</td></tr>
-      <tr><td>水生根茎类</td><td class="num">40607.55</td><td class="num">37.43</td><td class="num">31.37</td><td class="num">0.84</td><td class="num">2.50</td></tr>
-      <tr><td>茄类</td><td class="num">22442.12</td><td class="num">20.68</td><td class="num">13.49</td><td class="num">0.65</td><td class="num">1.59</td></tr>
-    </tbody>
-  </table>
-  <p><strong>如何解读：</strong>花叶类销售规模最高，同时 CV 最低，说明其规模大且相对稳定；水生根茎类总销量低于花叶类，但 CV 最高，说明相对波动最强。所有品类偏度为正，意味着少数高销量日会拉长右尾。</p>
-  <div class="grid">
-    <figure><img src="../analysis/problem1/figures/品类_总销量柱状图.png" alt="品类总销量柱状图"><figcaption>图 1 六个品类三年总销量</figcaption></figure>
-    <figure><img src="../analysis/problem1/figures/品类_日销量箱线图.png" alt="品类日销量箱线图"><figcaption>图 2 品类日销量分布</figcaption></figure>
-  </div>
-  <p>星期规律中，六个品类总体呈现周末平均销量相对更高的现象。这只是销售量在星期上的描述性差异，不能仅据此归因为周末客流变化。</p>
-  <p>月度均值虽有变化，但对完整的 2021、2022 年比较后，六类品类没有任何一类同时满足“曲线 Pearson、Spearman 均不低于 0.50，且峰谷月份均相近”的保守重复规则。因此应写作“存在月度变化”，不能写作“已经证明存在稳定季节性”。</p>
-  <figure><img src="../analysis/problem1/figures/品类_跨年度月度规律.png" alt="跨年度月份规律"><figcaption>图 3 各品类月度变化的跨年度对照。2020 年仅有下半年、2023 年仅有上半年，完整年度比较以 2021 和 2022 为主。</figcaption></figure>
-
-  <h2 id="relation">6. 品类之间的关系</h2>
-  <p>周尺度先由 157 个原始 <code>W-SUN</code> 周修正为 150 个完整自然周；含无销售记录日、首尾不完整周的旧口径仅作为审计对照。下表重点列出日尺度、完整周尺度和去时间效应后的结果。</p>
-  <table>
-    <thead><tr><th>品类对</th><th class="num">日 Pearson</th><th class="num">完整周 Pearson</th><th class="num">残差 Pearson</th><th class="num">残差 Spearman</th><th class="num">含年份效应残差 Pearson</th><th class="num">含年份效应残差 Spearman</th></tr></thead>
-    <tbody>
-      <tr><td>辣椒类—食用菌</td><td class="num">0.69</td><td class="num">0.54</td><td class="num">0.74</td><td class="num">0.62</td><td class="num">0.74</td><td class="num">0.58</td></tr>
-      <tr><td>花叶类—花菜类</td><td class="num">0.63</td><td class="num">0.68</td><td class="num">0.57</td><td class="num">0.54</td><td class="num">0.56</td><td class="num">0.54</td></tr>
-      <tr><td>水生根茎类—食用菌</td><td class="num">0.67</td><td class="num">0.57</td><td class="num">0.56</td><td class="num">0.35</td><td class="num">0.63</td><td class="num">0.47</td></tr>
-    </tbody>
-  </table>
-  <p>三组重点品类对在不同尺度及时间控制后均保持正向同步变化，加入年份效应后方向和量级没有发生本质改变，因此对时间控制设定具有一定稳健性。正确的论文表述是“控制星期、月份和长期趋势后仍存在正向同步线索”，而不是“一类蔬菜促进另一类销量”。</p>
-  <div class="grid">
-    <figure><img src="../analysis/problem1/figures/品类_周尺度完整自然周Pearson热力图.png" alt="完整自然周相关热力图"><figcaption>图 4 仅用完整自然周计算的品类 Pearson 相关</figcaption></figure>
-    <figure><img src="../analysis/problem1/figures/品类_残差Pearson热力图.png" alt="残差相关热力图"><figcaption>图 5 控制星期、月份和线性趋势后的品类残差 Pearson 相关</figcaption></figure>
-  </div>
-
-  <h2 id="item">7. 单品分布与单品关系</h2>
-  <h3>7.1 单品销量集中与覆盖期差异</h3>
-  <p>246 个实际销售单品中，销量 Top 10 贡献约 39.1%，Top 20 贡献约 57.2%。这说明单品规模不均衡，少数高销量商品贡献较大比例，但数据不足以证明它服从某种特定的幂律或长尾分布。单品销售天数中位数只有 81 天，表明覆盖期差异显著，也解释了为什么不能把 (1095\times246) 的所有缺失格统一填为 0。</p>
-  <figure><img src="../analysis/problem1/figures/单品_销量排名与累计贡献.png" alt="单品销量排名和累计贡献"><figcaption>图 6 单品销量排名与累计贡献</figcaption></figure>
-
-  <h3>7.2 稳健单品关系的结构</h3>
-  <p>30135 个单品对中，共同销售日数的 Q1/中位数/Q3 分别为 0、1、18 天。经过共同销售日与双相关系数筛选，得到 269 对稳健关系：267 对正相关、2 对负相关；96 对为同品类组合、173 对为跨品类组合。稳健关系数量最多的组合包括花叶类—花叶类、花叶类—辣椒类、花叶类—食用菌和辣椒类—食用菌。</p>
-  <table>
-    <thead><tr><th>代表性单品对</th><th>类别</th><th class="num">共同销售日</th><th class="num">Pearson</th><th class="num">Spearman</th><th>应采用的表述</th></tr></thead>
-    <tbody>
-      <tr><td>云南生菜(份)—云南油麦菜(份)</td><td>同品类正相关</td><td class="num">387</td><td class="num">0.727</td><td class="num">0.721</td><td>正向同步线索</td></tr>
-      <tr><td>上海青—云南油麦菜</td><td>同品类正相关</td><td class="num">765</td><td class="num">0.563</td><td class="num">0.599</td><td>正向同步线索</td></tr>
-      <tr><td>大白菜—平菇</td><td>跨品类正相关</td><td class="num">262</td><td class="num">0.700</td><td class="num">0.746</td><td>正向同步线索</td></tr>
-      <tr><td>大白菜—甜白菜</td><td>同品类负相关</td><td class="num">248</td><td class="num">-0.450</td><td class="num">-0.599</td><td>反向同步线索；可能存在替代性，需进一步验证</td></tr>
-    </tbody>
-  </table>
-  <p>负相关样本极少，不能直接认定两种商品互为替代品。要验证替代或互补关系，还需要价格、促销、在售状态和消费者购买篮子等信息。</p>
-
-  <h2 id="conclusion">8. 最终结论、图表取舍与限制</h2>
-  <table>
-    <thead><tr><th>最终可保留的结论</th><th>证据</th><th>表述限制</th></tr></thead>
-    <tbody>
-      <tr><td>六品类规模与相对波动不同</td><td>总销量、日均、CV、箱线图</td><td>描述差异，不解释形成原因</td></tr>
-      <tr><td>周末销量总体较高</td><td>有效星期日均销量</td><td>不推断客流或其他外部原因</td></tr>
-      <tr><td>月度变化存在但跨完整年度不稳定</td><td>2021/2022 月均曲线一致性检验</td><td>不称稳定季节性</td></tr>
-      <tr><td>三组重点品类具有正向同步线索</td><td>日、完整周、残差和年份效应敏感性</td><td>不是因果，也不直接称互补</td></tr>
-      <tr><td>单品关系须以共同销售日为条件</td><td>overlap 分布和 n≥60 双相关筛选</td><td>不把未知日期补零；不证明替代或互补</td></tr>
-    </tbody>
-  </table>
-  <p><strong>正文建议放入：</strong>六品类描述统计表，品类总销量与箱线图，星期或跨年度月份图，完整自然周相关热图，残差相关热图，单品累计贡献图，以及代表性单品关系表。建议控制在 5—7 组图表。</p>
-  <p><strong>只留在附录/分析目录：</strong>含不完整周的旧相关矩阵、全部 Top100 单品对、Pearson/Spearman 差异审计表、全量 269 对稳健关系，以及完整 overlap 明细。这些文件用于验证口径和复查结果，不应作为正文主结论。</p>
-
-  <h2 id="reproduce">9. 如何复现本报告的数字和图</h2>
-  <p>全部分析由 <code>analysis/problem1/problem1_eda.py</code> 从问题一 CSV 自动生成。运行环境依赖写在 <code>analysis/problem1/requirements.txt</code>。在仓库根目录安装依赖后运行：</p>
-  <div class="formula"><code>python analysis/problem1/problem1_eda.py</code></div>
-  <p>主要输入为 <code>问题1_建模数据/单品_日销售汇总.csv</code>、<code>问题1_建模数据/品类_日销售汇总.csv</code>，并读取审计分支产生的单品活跃期统计。程序输出统计表、热图和 <code>analysis/problem1/problem1_eda_report.md</code>。本 HTML 仅整理这些已有结果，不重新计算或引入新的模型。</p>
-
-  <footer>
-    说明：若从 GitHub 下载本 HTML 后在本地打开，请保持 <code>paper/</code> 与 <code>analysis/problem1/figures/</code> 的相对目录结构，以便页面中的图片正常显示。公式由 MathJax 渲染，首次打开时需要网络访问其公共脚本。
-  </footer>
+  <h2 id="summary">7. 结论、图表取舍与限制</h2>
+  <table><thead><tr><th>可保留结论</th><th>证据</th><th>表述限制</th></tr></thead><tbody>
+    <tr><td>六品类的规模与相对波动不同</td><td>总销量、日均、中位数、CV、箱线图</td><td>描述差异，不解释成因</td></tr>
+    <tr><td>自然星期下周末销量总体较高</td><td>有效星期日均销量</td><td>未剔除节假日与调休，不解释为纯工作日效应</td></tr>
+    <tr><td>月度变化存在但跨完整年度不稳定</td><td>2021/2022 月均曲线核验</td><td>不称稳定季节性</td></tr>
+    <tr><td>三组重点品类存在正向同步线索</td><td>日、完整周、残差及年份效应敏感性</td><td>不是因果、互补或替代</td></tr>
+    <tr><td>单品关系需以共同销售日为条件</td><td>overlap 分布和 n≥60 双相关筛选</td><td>不把未知日期补零</td></tr>
+  </tbody></table>
+  <p><strong>正文建议：</strong>六品类描述统计表、品类总销量与箱线图、星期规律图或跨年度月份图、完整自然周热图、残差热图、单品累计贡献图和代表性单品关系表。28 日趋势、长期趋势、旧周口径、全量单品对和明细审计均留在附录或分析目录。</p>
+  <footer>本页由 <code>analysis/problem1/problem1_eda.py</code> 的现有输出整理而成。若从 GitHub 下载 HTML 后在本地打开，请保持 <code>paper/</code> 与 <code>analysis/problem1/figures/</code> 的相对目录结构；公式由 MathJax 渲染，首次打开需要网络访问公共脚本。</footer>
 </main>
 </body>
 </html>
