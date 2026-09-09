@@ -462,10 +462,15 @@ $$\sum_{{i\in c}}(1-L_i)R_i\geq D^{{target}}_{{c,2023\text{{-}}07\text{{-}}01}}.
              "<h2>问题二：方法与七日策略</h2><p>需求模型控制星期、月份和时间趋势，按滚动 7 日 MAE 选择；"
              "成本模型按同一时间顺序回测选择。价格仅在历史加成率 5%--95% 区间搜索；"
              "损耗通过有效库存和报童式残差 bootstrap 进入补货决策。</p>" + plan_html.round(3).to_html(index=False))
+    html += ("<h3>问题二模型验证与敏感性</h3><h4>需求模型滚动验证</h4>" + demand_models.round(3).to_html(index=False)
+             + "<h4>成本模型滚动验证</h4>" + cost_models.round(3).to_html(index=False)
+             + "<h4>敏感性</h4>" + cat_sens.round(3).to_html(index=False))
     html += (f"<h2>问题三：7月1日单品策略</h2><p>候选 {len(candidates)} 个，选中 {len(item_plan)} 个，"
              f"预计利润 {item_plan.expected_profit.sum():.2f} 元。候选仅来自 6 月 24--30 日有正常销售的单品；"
              "MILP 自动检查选品数量、2.5 kg 下限及六品类的有效库存目标。</p>" + item_html.round(3).to_html(index=False))
-    html += "<h2>问题四：建议采集的数据</h2><p>优先补齐实际库存/在售、实际订货到货和动态损耗数据；其余优先级与对问题一至三的作用见 problem4_draft.md。</p><h2>阅读限制</h2><p>这些结果是基于历史观测数据的预测优化，不能把价格关系或品类/单品同步关系解释为因果。实际库存、供应能力和动态损耗缺失，限制了策略的直接执行性。</p></html>"
+    html += ("<h3>问题三约束检查</h3>" + checks.to_html(index=False)
+             + "<h3>问题三敏感性</h3>" + item_sens.round(3).to_html(index=False))
+    html += "<h2>问题四：建议采集的数据</h2><ol><li>库存、到货、上架、缺货与日终库存：区分真实零需求与销量截断。</li><li>实际订货/到货和供应商能力：使补货策略可以验证与执行。</li><li>批次损耗、报损和折价处理：以动态损耗替代长期平均损耗率。</li><li>促销、陈列、节假日/调休、天气和客流：减少需求与价格关系的遗漏变量偏差。</li><li>购物篮及竞争价格：识别真实共同购买、替代线索和市场价格敏感性。</li></ol><p>完整优先级表见 <code>paper/problem4_draft.md</code>。</p><h2>阅读限制</h2><p>这些结果是基于历史观测数据的预测优化，不能把价格关系或品类/单品同步关系解释为因果。实际库存、供应能力和动态损耗缺失，限制了策略的直接执行性。</p></html>"
     (paper/"problem2_4_report.html").write_text(html, encoding="utf-8")
     report2 = p2/"report"; report3 = p3/"report"
     report2.mkdir(exist_ok=True); report3.mkdir(exist_ok=True)
