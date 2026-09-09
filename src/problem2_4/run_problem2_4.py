@@ -379,7 +379,7 @@ def write_markdown_reports(out, plan, baseline, demand_models, cost_models, cat_
           effective_inventory_kg=("effective_inventory", "sum"), expected_profit=("expected_profit", "sum"))
      .to_csv(p3/"tables/品类汇总.csv", index=False, encoding="utf-8-sig"))
     total, base_total = plan.expected_profit.sum(), baseline.baseline_expected_profit.sum()
-    (paper/"problem2_draft.md").write_text(f"""# 问题二：品类级补货与定价
+    (paper/"problem2_draft.md").write_text(rf"""# 问题二：品类级补货与定价
 
 ## 1. 建模口径与目标
 
@@ -413,7 +413,7 @@ $$E[\Pi]=E\left[P\min\{{D,(1-L_c)R\}}-CR\right].$$
 
 价格均在历史支持区间内，代码对该条件、时间顺序和约束口径进行自动检查。敏感性结果保存在 `敏感性分析.csv`：成本上升会明显压缩利润，价格关系强度变化亦会改变结果；损耗率上调情景若未改变库存约束，数值影响可能较小，不能据此推断损耗不重要。结论仍受历史价格内生性、固定损耗率和实际库存未知等限制。
 """, encoding="utf-8")
-    (paper/"problem3_draft.md").write_text("""# 问题三：2023 年 7 月 1 日单品级补货与定价
+    (paper/"problem3_draft.md").write_text(r"""# 问题三：2023 年 7 月 1 日单品级补货与定价
 
 ## 1. 候选集与预测
 
