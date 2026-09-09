@@ -1,0 +1,11 @@
+check,value,passed
+selected_item_count_27_to_33,33,True
+all_selected_replenishment_at_least_2_5kg,2.5,True
+milp_success,Optimization terminated successfully. (HiGHS Status 7: Optimal),True
+水生根茎类_effective_inventory_ge_target,1.6153983971499883,True
+花叶类_effective_inventory_ge_target,5.718923728968889,True
+花菜类_effective_inventory_ge_target,7.019792133846465,True
+茄类_effective_inventory_ge_target,0.21601152022244463,True
+辣椒类_effective_inventory_ge_target,3.3475559228353973,True
+食用菌_effective_inventory_ge_target,5.792872516583344,True
+
