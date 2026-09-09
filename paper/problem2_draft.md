@@ -6,11 +6,11 @@
 
 设品类 $c$ 在日期 $t$ 的销量、销量加权售价和销量加权批发成本分别为 $Q_{c,t},P_{c,t},C_{c,t}$，成本加成率为
 
-$$m_{c,t}=rac{P_{c,t}-C_{c,t}}{C_{c,t}}.$$
+$$m_{c,t}=\frac{P_{c,t}-C_{c,t}}{C_{c,t}}.$$
 
 需求候选模型包含线性加成率、二次加成率和对数价格模型；均控制星期、月份和线性时间趋势。例如，对数价格模型为
 
-$$\log Q_{c,t}=lpha_c+eta_c\log P_{c,t}+\gamma_{m weekday}+\delta_{m month}+\eta t+arepsilon_{c,t}.$$
+$$\log Q_{c,t}=\alpha_c+\beta_c\log P_{c,t}+\gamma_{\rm weekday}+\delta_{\rm month}+\eta t+\varepsilon_{c,t}.$$
 
 以滚动的连续 7 日测试块比较 MAE，选择每类误差最低的模型。该关系是控制共同时间规律后的历史预测关系，不能解释为严格的因果价格弹性。
 
@@ -20,11 +20,11 @@ $$\log Q_{c,t}=lpha_c+eta_c\log P_{c,t}+\gamma_{m weekday}+\delta_{m month}+
 
 附件 4 给出品类损耗率 $L_c$。将可销售库存记为 $y=(1-L_c)R$，则有效成本为 $C^{eff}=C/(1-L_c)$。在零残值近似下，利用需求模型残差 bootstrap 形成需求样本，并以报童临界分位数
 
-$$F_D(y^*)=1-rac{C^{eff}}{P}$$
+$$F_D(y^*)=1-\frac{C^{eff}}{P}$$
 
 确定库存，再换算采购量 $R^*=y^*/(1-L_c)$。对每一日和品类，直接在候选价格与对应库存上最大化
 
-$$E[\Pi]=E\left[P\min\{D,(1-L_c)R\}-CRight].$$
+$$E[\Pi]=E\left[P\min\{D,(1-L_c)R\}-CR\right].$$
 
 ## 3. 结果与验证
 
